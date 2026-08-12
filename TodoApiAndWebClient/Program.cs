@@ -1,4 +1,82 @@
-using TodoApiAndWebClient;
+using System.Text.Json;
+using TodoApiAndWebClient.DTOs;
+using TodoApiAndWebClient.Model;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddEndpointsApiExplorer(); // Crucial for Minimal APIs to discover endpoints
+builder.Services.AddSwaggerGen();
+var app = builder.Build();
+app.UseStaticFiles();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();   // Generates the JSON endpoint (e.g., /swagger/v1/swagger.json)
+    app.UseSwaggerUI(); // Generates the interactive UI web page (/swagger)
+}
+app.UseHttpsRedirection();
+
+var filename = "todos.json";
+
+app.MapGet("/todos", () =>
+{
+    if (!File.Exists(filename)) return Results.Ok(Array.Empty<TodoItem>());
+    var json = File.ReadAllText(filename);
+    var todos = JsonSerializer.Deserialize<TodoItem[]>(json);
+    return Results.Ok(todos);
+});
+
+app.MapGet("/todos/{id}", (int id) =>
+{
+    if (!File.Exists(filename)) return Results.NotFound();
+    var json = File.ReadAllText(filename);
+    var todos = JsonSerializer.Deserialize<TodoItem[]>(json);
+    var todoItem = todos.FirstOrDefault(todo => todo.Id == id);
+    return todoItem == null ? Results.NotFound() : Results.Ok(todoItem);
+});
+app.MapPost("/todos", (CreateTodoDto dto) =>
+{
+    if (string.IsNullOrWhiteSpace(dto.Text))
+    {
+        return Results.BadRequest("Text cannot be empty.");
+    }
+
+    var todos = new List<TodoItem>();
+    if (File.Exists(filename))
+    {
+        var json1 = File.ReadAllText(filename);
+        var todosArray = JsonSerializer.Deserialize<TodoItem[]>(json1);
+        todos.AddRange(todosArray);
+    }
+
+    var id = todos.Count == 0 ? 1 : todos.Max(t => t.Id) + 1;
+    var todo = new TodoItem()
+    {
+        Id = id,
+        Text = dto.Text,
+        IsDone = false,
+    };
+    todos.Add(todo);
+
+    var json2 = JsonSerializer.Serialize(todos);
+    File.WriteAllText(filename, json2);
+
+    return Results.Created($"/todos/{todo.Id}", todo);
+});
+
+/*
+ * Alternativt flytte mest mulig til separat klasse
+   app.MapGet("/todos", TodoService.GetAll);
+   app.MapGet("/terje", TodoService.GetTerje);
+ */
+app.Run();
+
+
+
+
+
+/*
+
+"In-memory db" = bare en List<TodoItem>
+
 using TodoApiAndWebClient.DTOs;
 using TodoApiAndWebClient.Model;
 
@@ -81,9 +159,5 @@ app.MapDelete("/todos/{id}", (int id) =>
     return Results.NoContent();
 });
 
-/*
- * Alternativt flytte mest mulig til separat klasse
-   app.MapGet("/todos", TodoService.GetAll);
-   app.MapGet("/terje", TodoService.GetTerje);
- */
 app.Run();
+*/

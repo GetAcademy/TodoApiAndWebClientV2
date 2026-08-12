@@ -15,7 +15,7 @@ POST {{baseUrl}}/todos
 Content-Type: application/json
 
 {
-  "text": "Terje"
+  "text": "b"
 }
 
 ### Oppdater todo
@@ -27,3 +27,7 @@ Content-Type: application/json
   "text": "Handle melk og kaffe",
   "isDone": true
 }
+
+### Slett todo
+
+DELETE {{baseUrl}}/todos/2
