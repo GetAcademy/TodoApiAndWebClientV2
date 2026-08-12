@@ -16,23 +16,23 @@ app.UseHttpsRedirection();
 
 var filename = "todos.json";
 
-app.MapGet("/todos", () =>
+app.MapGet("/todos", async () =>
 {
     if (!File.Exists(filename)) return Results.Ok(Array.Empty<TodoItem>());
-    var json = File.ReadAllText(filename);
+    var json = await File.ReadAllTextAsync(filename);
     var todos = JsonSerializer.Deserialize<TodoItem[]>(json);
     return Results.Ok(todos);
 });
 
-app.MapGet("/todos/{id}", (int id) =>
+app.MapGet("/todos/{id}", async (int id) =>
 {
     if (!File.Exists(filename)) return Results.NotFound();
-    var json = File.ReadAllText(filename);
+    var json = await File.ReadAllTextAsync(filename);
     var todos = JsonSerializer.Deserialize<TodoItem[]>(json);
     var todoItem = todos.FirstOrDefault(todo => todo.Id == id);
     return todoItem == null ? Results.NotFound() : Results.Ok(todoItem);
 });
-app.MapPost("/todos", (CreateTodoDto dto) =>
+app.MapPost("/todos", async (CreateTodoDto dto) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Text))
     {
@@ -42,7 +42,7 @@ app.MapPost("/todos", (CreateTodoDto dto) =>
     var todos = new List<TodoItem>();
     if (File.Exists(filename))
     {
-        var json1 = File.ReadAllText(filename);
+        var json1 = await File.ReadAllTextAsync(filename);
         var todosArray = JsonSerializer.Deserialize<TodoItem[]>(json1);
         todos.AddRange(todosArray);
     }
@@ -57,7 +57,7 @@ app.MapPost("/todos", (CreateTodoDto dto) =>
     todos.Add(todo);
 
     var json2 = JsonSerializer.Serialize(todos);
-    File.WriteAllText(filename, json2);
+    await File.WriteAllTextAsync(filename, json2);
 
     return Results.Created($"/todos/{todo.Id}", todo);
 });
