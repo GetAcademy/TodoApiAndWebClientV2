@@ -5,7 +5,7 @@ Accept: application/json
 
 ### Hent todo 1
 
-GET {{baseUrl}}/todos/1
+GET {{baseUrl}}/todos/11
 Accept: application/json
 
 
@@ -15,5 +15,15 @@ POST {{baseUrl}}/todos
 Content-Type: application/json
 
 {
-  "text": "Lære HTTP-filer"
+  "text": "Terje"
+}
+
+### Oppdater todo
+
+PUT {{baseUrl}}/todos/1
+Content-Type: application/json
+
+{
+  "text": "Handle melk og kaffe",
+  "isDone": true
 }

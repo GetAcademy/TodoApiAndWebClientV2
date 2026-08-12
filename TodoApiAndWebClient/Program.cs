@@ -17,32 +17,68 @@ app.UseHttpsRedirection();
 // All kode rett i program:
 var todos = new List<TodoItem>
 {
-    new() { Id = 1, Text = "Handle melk", IsDone = false },
-    new() { Id = 2, Text = "Svare på e-post", IsDone = true }
+    //new() { Id = 1, Text = "Handle melk", IsDone = false },
+    //new() { Id = 2, Text = "Svare på e-post", IsDone = true }
 };
 
 app.MapGet("/todos", () =>
 {
-    return todos;
+    return Results.Ok(todos);
 });
 app.MapGet("/todos/{id}", (int id) =>
 {
-    return todos.FirstOrDefault(todo => todo.Id == id);
+    var todoItem = todos.FirstOrDefault(todo => todo.Id == id);
+
+    return todoItem == null ? Results.NotFound() : Results.Ok(todoItem);
 });
-app.MapGet("/terje", () =>
+app.MapPost("/todos", (CreateTodoDto dto) =>
 {
-    return new { FirstName = "Terje", LastName = "Kolderup" };
-});
-app.MapPost("/todos", (CreateTodoDto createTodoDto) =>
-{
-    var todoItem = new TodoItem()
+    if (string.IsNullOrWhiteSpace(dto.Text))
     {
-        Id = todos.Max(t => t.Id) + 1,
-        Text = createTodoDto.Text,
+        return Results.BadRequest("Text cannot be empty.");
+    }
+
+    var id = todos.Count == 0 ? 1 : todos.Max(t => t.Id) + 1;
+    var todo = new TodoItem()
+    {
+        Id = id,
+        Text = dto.Text,
         IsDone = false,
     };
-    todos.Add(todoItem);
-    return todoItem;
+    todos.Add(todo);
+    return Results.Created($"/todos/{todo.Id}", todo);
+});
+app.MapPut("/todos/{id}", (int id, UpdateTodoDto dto) =>
+{
+    var todo = todos.FirstOrDefault(todo => todo.Id == id);
+
+    if (todo == null)
+    {
+        return Results.NotFound();
+    }
+
+    if (string.IsNullOrWhiteSpace(dto.Text))
+    {
+        return Results.BadRequest("Text cannot be empty.");
+    }
+
+    todo.Text = dto.Text;
+    todo.IsDone = dto.IsDone;
+
+    return Results.Ok(todo);
+});
+app.MapDelete("/todos/{id}", (int id) =>
+{
+    var todo = todos.FirstOrDefault(todo => todo.Id == id);
+
+    if (todo == null)
+    {
+        return Results.NotFound();
+    }
+
+    todos.Remove(todo);
+
+    return Results.NoContent();
 });
 
 /*
